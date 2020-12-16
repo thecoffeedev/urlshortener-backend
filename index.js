@@ -108,7 +108,6 @@ app.post("/login", async (req, res) => {
         let token = await jwt.sign({
           data: user._id
         }, process.env.JWT_SECRET_KEY, { expiresIn: '1h' })
-        console.log(token);
         let compare = await bcrypt.compare(req.body.password, user.password);
         if (compare) {
           res.status(200).json({ message: "user logged in successfully", token });
@@ -254,6 +253,7 @@ app.post("/home", tokenValidation, async (req, res) => {
     let urls = await db.collection('urls').find({shortString: {$in: user.urls}}).toArray();
     let data = {user: user, urls: urls}
     res.status(200).json({message: "user logged in successfully", data})
+    client.close();
   } catch (error) {
     console.log(error);
     res.sendStatus(500); 
@@ -287,6 +287,7 @@ app.post("/add-url", tokenValidation, async (req, res) => {
     await db.collection('users').findOneAndUpdate({_id: objectId(req.body.id)}, {$addToSet: {urls: rst }});
     let user = await db.collection('users').findOne({_id: objectId(req.body.id)}, {fields: {urls: 1}});
     res.status(200).json({message: 'url added successfully', user})
+    client.close();
   } catch (err) {
     console.log(err);
     res.sendStatus(500);
@@ -299,6 +300,7 @@ app.get("/redirect/:id", async (req, res) => {
     let db = client.db('url_shortener_db');
     let url = await db.collection('urls').findOneAndUpdate({'shortString': req.params.id}, {$inc: {count: 1}})
     res.status(200).json({message: 'redirected successful', url})
+    client.close();
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
